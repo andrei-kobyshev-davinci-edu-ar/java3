@@ -83,18 +83,8 @@ public abstract class Mascota implements MascotaI {
     }
     
     public void empeorar() {
-        TipoEstado tipoActual = estado.getTipo();
-        switch (tipoActual) {
-            case SALUDABLE:
-                cambiarEstado(new EstadoRequiereCuidadosEspeciales());
-                break;
-            case REQUIERE_CUIDADOS_ESPECIALES:
-                cambiarEstado(new EstadoEnObservacion());
-                break;
-            case EN_OBSERVACION:
-                // Ya está en el peor estado
-                break;
-        }
+        // Delegamos la lógica al estado actual (Tell, don't ask)
+        estado.empeorar(this);
     }
     
     // Getters y setters originales

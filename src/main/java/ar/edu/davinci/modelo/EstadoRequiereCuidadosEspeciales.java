@@ -36,4 +36,9 @@ public class EstadoRequiereCuidadosEspeciales extends EstadoConCuidadosBase {
     public TipoEstado getTipo() {
         return TipoEstado.REQUIERE_CUIDADOS_ESPECIALES;
     }
+    
+    @Override
+    public void empeorar(Mascota mascota) {
+        mascota.cambiarEstado(new EstadoEnObservacion());
+    }
 }

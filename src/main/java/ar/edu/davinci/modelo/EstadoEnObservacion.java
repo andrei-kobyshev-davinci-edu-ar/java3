@@ -44,4 +44,9 @@ public class EstadoEnObservacion extends EstadoConCuidadosBase {
     public TipoEstado getTipo() {
         return TipoEstado.EN_OBSERVACION;
     }
+    
+    @Override
+    public void empeorar(Mascota mascota) {
+        // Ya está en el peor estado, no hace nada
+    }
 }

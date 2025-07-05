@@ -30,4 +30,9 @@ public class EstadoSaludable extends EstadoMascota {
     public TipoEstado getTipo() {
         return TipoEstado.SALUDABLE;
     }
+    
+    @Override
+    public void empeorar(Mascota mascota) {
+        mascota.cambiarEstado(new EstadoRequiereCuidadosEspeciales());
+    }
 }

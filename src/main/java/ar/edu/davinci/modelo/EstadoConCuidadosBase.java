@@ -12,4 +12,10 @@ public abstract class EstadoConCuidadosBase extends EstadoMascota {
         recomendaciones.addAll(cuidadosAdicionales);
         return recomendaciones;
     }
+    
+    // Implementación por defecto que las subclases pueden sobrescribir
+    @Override
+    public void empeorar(Mascota mascota) {
+        // Por defecto no hace nada, las subclases definen su comportamiento
+    }
 }

@@ -11,4 +11,5 @@ public abstract class EstadoMascota {
     public abstract boolean quiereJugar();
     public abstract void cambiarTemperatura(Mascota mascota, double nuevaTemperatura);
     public abstract TipoEstado getTipo();
+    public abstract void empeorar(Mascota mascota);
 }
