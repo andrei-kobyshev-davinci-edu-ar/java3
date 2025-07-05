@@ -1,6 +1,6 @@
 package ar.edu.davinci.dao;
 
-import ar.edu.davinci.modelo.Mascota;
+import ar.edu.davinci.modelo.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,11 +22,7 @@ public class MascotaDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
             
             while (rs.next()) {
-                Mascota mascota = new Mascota();
-                mascota.setId(rs.getLong("id"));
-                mascota.setNombre(rs.getString("nombre"));
-                mascota.setTipo(rs.getString("tipo"));
-                mascota.setPeso(rs.getDouble("peso"));
+                Mascota mascota = crearMascotaDesdeResultSet(rs);
                 mascotas.add(mascota);
             }
         } catch (SQLException e) {
@@ -46,12 +42,7 @@ public class MascotaDAO {
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
-                Mascota mascota = new Mascota();
-                mascota.setId(rs.getLong("id"));
-                mascota.setNombre(rs.getString("nombre"));
-                mascota.setTipo(rs.getString("tipo"));
-                mascota.setPeso(rs.getDouble("peso"));
-                return mascota;
+                return crearMascotaDesdeResultSet(rs);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -85,4 +76,34 @@ public class MascotaDAO {
     }
     
     // Ya no necesitamos eliminar mascotas, solo se marcan como adoptadas
+    
+    private Mascota crearMascotaDesdeResultSet(ResultSet rs) throws SQLException {
+        String tipo = rs.getString("tipo");
+        String nombre = rs.getString("nombre");
+        double peso = rs.getDouble("peso");
+        
+        Mascota mascota;
+        switch (tipo.toLowerCase()) {
+            case "perro":
+                mascota = new Perro(nombre, peso);
+                break;
+            case "gato":
+                mascota = new Gato(nombre, peso);
+                break;
+            case "conejo":
+                mascota = new Conejo(nombre, peso);
+                break;
+            case "pajaro":
+            case "pájaro":
+                mascota = new Pajaro(nombre, peso);
+                break;
+            default:
+                // Por compatibilidad, creamos un Perro por defecto
+                mascota = new Perro(nombre, peso);
+                mascota.setTipo(tipo);
+        }
+        
+        mascota.setId(rs.getLong("id"));
+        return mascota;
+    }
 }

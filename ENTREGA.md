@@ -63,6 +63,11 @@
 - Las mascotas adoptadas se marcan como no disponibles (no se eliminan)
 - Manejo robusto de excepciones
 - Logging configurado con SLF4J
+- **Patrón State** implementado para estados de salud de mascotas
+- **Interfaces y clases abstractas** según feedback del profesor
+- **Enums** para tipos y constantes del dominio
+- **Herencia y polimorfismo** con clases concretas de mascotas
+- **Recomendaciones dinámicas** según estado de salud
 
 ### 📁 Estructura del Proyecto
 ```
@@ -79,11 +84,28 @@ src/main/java/ar/edu/davinci/
 │   └── AdopcionDAO.java
 ├── modelo/                     # Clases de dominio
 │   ├── Empleado.java
-│   ├── Mascota.java
+│   ├── Mascota.java          # Clase abstracta
+│   ├── Perro.java            # Implementación concreta
+│   ├── Gato.java             # Implementación concreta
+│   ├── Conejo.java           # Implementación concreta
+│   ├── Pajaro.java           # Implementación concreta
 │   ├── Adoptante.java
 │   ├── Adopcion.java
-│   ├── Cosa.java              # Interfaz solicitada
-│   └── MascotaI.java          # Interfaz solicitada
+│   ├── Cosa.java             # Interfaz solicitada
+│   ├── MascotaI.java         # Interfaz solicitada
+│   ├── DescribableI.java     # Interfaz para descripción
+│   ├── EstadoMascota.java    # Patrón State
+│   ├── EstadoSaludable.java
+│   ├── EstadoRequiereCuidadosEspeciales.java
+│   ├── EstadoEnObservacion.java
+│   ├── EstadoConCuidadosBase.java
+│   ├── RegistroCuidados.java
+│   ├── TipoEstado.java       # Enum
+│   ├── TipoCuidado.java      # Enum
+│   ├── TipoCampo.java        # Enum
+│   ├── TipoRequisito.java    # Enum
+│   ├── TipoServicio.java     # Enum
+│   └── TipoPasoAdopcion.java # Enum
 ├── servicio/                   # Servicios
 │   └── SesionServicio.java    # Singleton para sesión
 ├── util/                       # Utilidades

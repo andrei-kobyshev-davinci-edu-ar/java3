@@ -20,7 +20,24 @@ public class AdopcionControlador {
     
     public String registrarMascota(String nombre, String tipo, double peso) {
         try {
-            Mascota mascota = new Mascota(nombre, tipo, peso);
+            Mascota mascota;
+            switch (tipo.toLowerCase()) {
+                case "perro":
+                    mascota = new Perro(nombre, peso);
+                    break;
+                case "gato":
+                    mascota = new Gato(nombre, peso);
+                    break;
+                case "conejo":
+                    mascota = new Conejo(nombre, peso);
+                    break;
+                case "pajaro":
+                case "pájaro":
+                    mascota = new Pajaro(nombre, peso);
+                    break;
+                default:
+                    return "Tipo de mascota no válido. Use: Perro, Gato, Conejo o Pájaro";
+            }
             mascotaDAO.guardar(mascota);
             return "Mascota registrada exitosamente";
         } catch (Exception e) {

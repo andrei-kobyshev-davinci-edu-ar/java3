@@ -4,6 +4,7 @@ import ar.edu.davinci.modelo.*;
 import javax.swing.*;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * Ventana para mostrar el ticket de adopción.
@@ -57,7 +58,10 @@ public class VentanaTicket extends JFrame {
         
         sb.append("\nRECOMENDACIONES DE CUIDADO:\n");
         sb.append("--------------------------\n");
-        sb.append(adopcion.getMascota().getRecomendaciones()).append("\n");
+        List<String> recomendaciones = adopcion.getMascota().getRecomendaciones();
+        for (String recomendacion : recomendaciones) {
+            sb.append("• ").append(recomendacion).append("\n");
+        }
         
         sb.append("\n=========================================\n");
         sb.append("¡Gracias por adoptar!\n");
