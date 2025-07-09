@@ -1,0 +1,421 @@
+@startuml Sistema de Adopción de Veterinaria - Final
+
+!define PLANTUML_LIMIT_SIZE 8192
+
+skinparam dpi 150
+skinparam pageMargin 50
+skinparam backgroundColor white
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+scale max 4096 width
+scale max 4096 height
+
+!define ENTITY_COLOR #E8F5E9
+!define DAO_COLOR #E3F2FD
+!define CONTROLLER_COLOR #FFF3E0
+!define VIEW_COLOR #F3E5F5
+!define SERVICE_COLOR #FFEBEE
+!define UTIL_COLOR #E0F2F1
+!define INTERFACE_COLOR #F5F5F5
+!define EXCEPTION_COLOR #FFCDD2
+!define FACTORY_COLOR #E1F5FE
+
+' Interfaces
+package "interfaces" <<Rectangle>> {
+    interface Cosa <<Interface>> {
+        + getNombre(): String
+        + esMascota(): boolean
+    }
+    
+    interface MascotaI <<Interface>> {
+        + getFechaNacimiento(): LocalDate
+        + getPeso(): double
+        + getRecomendaciones(): List<String>
+        + getEstado(): EstadoMascota
+        + cambiarEstado(EstadoMascota): void
+    }
+    
+    interface DescribableI <<Interface>> {
+        + getDescripcion(): String
+    }
+    
+    interface DAO<T, ID> <<Interface>> {
+        + guardar(T): T
+        + actualizar(T): T
+        + eliminar(ID): boolean
+        + buscarPorId(ID): Optional<T>
+        + buscarTodos(): List<T>
+        + crearTabla(): void
+    }
+}
+
+' Entidades del Modelo
+package "modelo" <<Rectangle>> {
+    abstract class Mascota <<Entity>> {
+        # id: Long
+        # nombre: String
+        # tipo: String
+        # peso: double
+        # fechaNacimiento: LocalDate
+        # estado: EstadoMascota
+        + {abstract} getCuidadosBase(): List<String>
+        + quiereJugar(): boolean
+        + registrarCambioTemperatura(double): void
+        + mejorar(): void
+        + empeorar(): void
+    }
+    
+    class Perro <<Entity>> {
+        + getCuidadosBase(): List<String>
+    }
+    
+    class Gato <<Entity>> {
+        + getCuidadosBase(): List<String>
+    }
+    
+    class Conejo <<Entity>> {
+        + getCuidadosBase(): List<String>
+    }
+    
+    class Pajaro <<Entity>> {
+        + getCuidadosBase(): List<String>
+    }
+    
+    class Empleado <<Entity>> {
+        - id: Long
+        - nombre: String
+        - email: String
+        - contrasena: String
+    }
+    
+    class Adoptante <<Entity>> {
+        - id: Long
+        - nombre: String
+        - edad: int
+        - direccion: String
+        - email: String
+        - telefono: String
+    }
+    
+    class Adopcion <<Entity>> {
+        - id: Long
+        - adoptante: Adoptante
+        - mascota: Mascota
+        - empleado: Empleado
+        - fechaAdopcion: LocalDateTime
+    }
+    
+    class Ticket <<Entity>> {
+        - adopcion: Adopcion
+        - fechaEmision: LocalDateTime
+        + generarContenido(): String
+        - generarSeccionAdoptante(): String
+        - generarSeccionMascota(): String
+        - generarSeccionEmpleado(): String
+        - generarSeccionRecomendaciones(): String
+    }
+    
+    ' Estados
+    abstract class EstadoMascota <<State>> {
+        + {abstract} obtenerRecomendaciones(List<String>): List<String>
+        + {abstract} quiereJugar(): boolean
+        + {abstract} cambiarTemperatura(Mascota, double): void
+        + {abstract} getTipo(): TipoEstado
+        + {abstract} empeorar(Mascota): void
+    }
+    
+    abstract class EstadoConCuidadosBase <<State>> {
+        # agregarCuidadosAdicionales(List<String>, List<String>): List<String>
+    }
+    
+    class EstadoSaludable <<State>> {
+    }
+    
+    class EstadoRequiereCuidadosEspeciales <<State>> {
+    }
+    
+    class EstadoEnObservacion <<State>> {
+        - notificarVeterinario(Mascota, double): void
+    }
+    
+    class RegistroCuidados <<Utility>> {
+        - {static} CUIDADOS_BASE: Map<Class, Set<TipoCuidado>>
+        + {static} obtenerCuidadosBase(Class): List<String>
+        + {static} obtenerCuidadosEspeciales(): List<String>
+        + {static} obtenerCuidadosObservacion(): List<String>
+    }
+}
+
+' DAOs
+package "dao" <<Rectangle>> {
+    abstract class BaseDAO<T, ID> <<DAO>> {
+        # conexionBD: ConexionBD
+        # {abstract} getNombreTabla(): String
+        # {abstract} getColumnaId(): String
+        # {abstract} mapearDesdeResultSet(ResultSet): T
+        # {abstract} prepararInsercion(PreparedStatement, T): void
+        # {abstract} prepararActualizacion(PreparedStatement, T): void
+        # {abstract} obtenerId(T): ID
+        # {abstract} establecerId(T, ID): void
+        # {abstract} getSqlCrearTabla(): String
+        # {abstract} construirSqlInsercion(): String
+        # {abstract} construirSqlActualizacion(): String
+    }
+    
+    class ConexionBD <<Singleton>> {
+        - {static} instancia: ConexionBD
+        + {static} obtenerInstancia(): ConexionBD
+        + obtenerConexion(): Connection
+        - inicializarBD(): void
+        - insertarDatosPrueba(): void
+    }
+    
+    class EmpleadoDAO <<DAO>> {
+        + buscarPorEmail(String): Optional<Empleado>
+        + validarCredenciales(String, String): boolean
+    }
+    
+    class MascotaDAO <<DAO>> {
+        + buscarMascotasDisponibles(): List<Mascota>
+    }
+    
+    class AdoptanteDAO <<DAO>> {
+    }
+    
+    class AdopcionDAO <<DAO>> {
+        + buscarTodasConRelaciones(): List<Adopcion>
+    }
+}
+
+' Servicios
+package "servicio" <<Rectangle>> {
+    class SesionServicio <<Singleton>> {
+        - {static} instancia: SesionServicio
+        - empleadoActual: Empleado
+        + {static} obtenerInstancia(): SesionServicio
+        + iniciarSesion(Empleado): void
+        + cerrarSesion(): void
+        + getEmpleadoActual(): Empleado
+        + haySesionActiva(): boolean
+    }
+    
+    class AdopcionServicio <<Service>> {
+        - mascotaDAO: MascotaDAO
+        - adoptanteDAO: AdoptanteDAO
+        - adopcionDAO: AdopcionDAO
+        - sesionServicio: SesionServicio
+        + obtenerMascotasDisponibles(): List<Mascota>
+        + registrarMascota(String, String, double): Mascota
+        + procesarAdopcion(...): Adopcion
+        + obtenerTodasLasAdopciones(): List<Adopcion>
+        + buscarAdopcionPorId(Long): Optional<Adopcion>
+        + actualizarAdopcion(Adopcion): Adopcion
+        + eliminarAdopcion(Long): boolean
+        - validarDatosAdoptante(String, int, String): void
+    }
+}
+
+' Factory
+package "factory" <<Rectangle>> {
+    class MascotaFactory <<Factory>> {
+        - {static} CREADORES_MASCOTA: Map<String, BiFunction>
+        + {static} crearMascota(String, String, double): Mascota
+        + {static} getTiposDisponibles(): String[]
+    }
+}
+
+' Controladores
+package "controlador" <<Rectangle>> {
+    class LoginControlador <<Controller>> {
+        - empleadoDAO: EmpleadoDAO
+        - sesionServicio: SesionServicio
+        + iniciarSesion(String, String): boolean
+        + registrarEmpleado(String, String, String): String
+        + cerrarSesion(): void
+    }
+    
+    class AdopcionControlador <<Controller>> {
+        - adopcionServicio: AdopcionServicio
+        + obtenerMascotasDisponibles(): List<Mascota>
+        + registrarMascota(String, String, double): String
+        + procesarAdopcion(...): ResultadoAdopcion
+        + obtenerTodasLasAdopciones(): List<Adopcion>
+        + actualizarAdopcion(Adopcion): ResultadoAdopcion
+        + eliminarAdopcion(Long): ResultadoAdopcion
+    }
+    
+    class ResultadoAdopcion <<Inner>> {
+        - exitoso: boolean
+        - mensaje: String
+        - adopcion: Adopcion
+    }
+}
+
+' Vistas
+package "vista" <<Rectangle>> {
+    class VentanaLogin <<View>> {
+        - loginControlador: LoginControlador
+    }
+    
+    class VentanaRegistro <<View>> {
+        - loginControlador: LoginControlador
+    }
+    
+    class VentanaPrincipal <<View>> {
+        - adopcionControlador: AdopcionControlador
+        - crearPanelGestionAdopciones(): JPanel
+    }
+    
+    class VentanaTicket <<View>> {
+        - ticket: Ticket
+    }
+    
+    class VentanaGestionAdopciones <<View>> {
+        - controlador: AdopcionControlador
+        - cargarAdopciones(): void
+        - verDetallesAdopcion(): void
+        - modificarAdopcion(): void
+        - eliminarAdopcion(): void
+    }
+    
+    class VentanaDetalleAdopcion <<View>> {
+        - adopcion: Adopcion
+        - mostrarTicket(): void
+    }
+    
+    class VentanaModificarAdopcion <<View>> {
+        - adopcionOriginal: Adopcion
+        - controlador: AdopcionControlador
+        - guardarCambios(): void
+    }
+}
+
+' Excepciones
+package "excepciones" <<Rectangle>> {
+    class AdopcionException <<Exception>> {
+    }
+    
+    class BaseDatosException <<Exception>> {
+    }
+    
+    class DatosInvalidosException <<Exception>> {
+    }
+    
+    class EmailDuplicadoException <<Exception>> {
+    }
+    
+    class EntidadNoEncontradaException <<Exception>> {
+    }
+    
+    class NombreInvalidoException <<Exception>> {
+    }
+    
+    class SesionNoActivaException <<Exception>> {
+    }
+    
+    class TipoMascotaInvalidoException <<Exception>> {
+    }
+}
+
+' Utilidades
+package "util" <<Rectangle>> {
+    class EncriptadorContrasena <<Utility>> {
+        + {static} encriptar(String): String
+    }
+}
+
+' Enums
+package "enums" <<Rectangle>> {
+    enum TipoEstado <<Enum>> {
+        SALUDABLE
+        REQUIERE_CUIDADOS_ESPECIALES
+        EN_OBSERVACION
+    }
+    
+    enum TipoCuidado <<Enum>> {
+        PASEOS_DIARIOS
+        DIETA_BALANCEADA
+        ...
+    }
+}
+
+' Relaciones principales
+
+' Herencia e implementación
+MascotaI --|> Cosa
+Mascota ..|> MascotaI
+Perro --|> Mascota
+Gato --|> Mascota
+Conejo --|> Mascota
+Pajaro --|> Mascota
+
+EstadoConCuidadosBase --|> EstadoMascota
+EstadoSaludable --|> EstadoMascota
+EstadoRequiereCuidadosEspeciales --|> EstadoConCuidadosBase
+EstadoEnObservacion --|> EstadoConCuidadosBase
+
+BaseDAO ..|> DAO
+EmpleadoDAO --|> BaseDAO
+MascotaDAO --|> BaseDAO
+AdoptanteDAO --|> BaseDAO
+AdopcionDAO --|> BaseDAO
+
+TipoEstado ..|> DescribableI
+TipoCuidado ..|> DescribableI
+
+' Excepciones
+DatosInvalidosException --|> AdopcionException
+NombreInvalidoException --|> DatosInvalidosException
+EmailDuplicadoException --|> AdopcionException
+EntidadNoEncontradaException --|> AdopcionException
+SesionNoActivaException --|> AdopcionException
+TipoMascotaInvalidoException --|> DatosInvalidosException
+
+' Asociaciones
+Mascota --> EstadoMascota : tiene
+Adopcion --> Adoptante : tiene
+Adopcion --> Mascota : tiene
+Adopcion --> Empleado : registrada por
+Ticket --> Adopcion : basado en
+
+' Uso de servicios
+AdopcionServicio --> MascotaDAO : usa
+AdopcionServicio --> AdoptanteDAO : usa
+AdopcionServicio --> AdopcionDAO : usa
+AdopcionServicio --> SesionServicio : usa
+AdopcionServicio --> MascotaFactory : usa
+
+AdopcionControlador --> AdopcionServicio : delega a
+LoginControlador --> EmpleadoDAO : usa
+LoginControlador --> SesionServicio : usa
+LoginControlador --> EncriptadorContrasena : usa
+
+' Vistas
+VentanaTicket --> Ticket : usa
+VentanaGestionAdopciones --> AdopcionControlador : usa
+VentanaModificarAdopcion --> AdopcionControlador : usa
+VentanaDetalleAdopcion --> Adopcion : muestra
+VentanaPrincipal --> VentanaGestionAdopciones : abre
+
+' DAOs y ConexionBD
+BaseDAO --> ConexionBD : usa
+
+' Estilos
+skinparam class {
+    BackgroundColor<<Entity>> ENTITY_COLOR
+    BackgroundColor<<DAO>> DAO_COLOR
+    BackgroundColor<<Controller>> CONTROLLER_COLOR
+    BackgroundColor<<View>> VIEW_COLOR
+    BackgroundColor<<Service>> SERVICE_COLOR
+    BackgroundColor<<Utility>> UTIL_COLOR
+    BackgroundColor<<Exception>> EXCEPTION_COLOR
+    BackgroundColor<<Singleton>> #FFE0B2
+    BackgroundColor<<Inner>> #F0F4C3
+    BackgroundColor<<Interface>> INTERFACE_COLOR
+    BackgroundColor<<Factory>> FACTORY_COLOR
+    BackgroundColor<<State>> #FFF9C4
+    BackgroundColor<<Enum>> #E8EAF6
+}
+
+@enduml

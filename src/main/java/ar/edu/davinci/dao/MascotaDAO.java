@@ -1,17 +1,18 @@
 package ar.edu.davinci.dao;
 
 import ar.edu.davinci.modelo.*;
+import ar.edu.davinci.excepciones.BaseDatosException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * DAO para mascotas.
  */
-public class MascotaDAO {
-    private final ConexionBD conexionBD = ConexionBD.obtenerInstancia();
+public class MascotaDAO extends BaseDAO<Mascota, Long> {
     
-    public List<Mascota> buscarTodas() {
+    public List<Mascota> buscarMascotasDisponibles() {
         List<Mascota> mascotas = new ArrayList<>();
         String sql = "SELECT m.* FROM mascotas m " +
                      "WHERE NOT EXISTS (SELECT 1 FROM adopciones a WHERE a.mascota_id = m.id) " +
@@ -22,62 +23,28 @@ public class MascotaDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
             
             while (rs.next()) {
-                Mascota mascota = crearMascotaDesdeResultSet(rs);
+                Mascota mascota = mapearDesdeResultSet(rs);
                 mascotas.add(mascota);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new BaseDatosException("Error al buscar mascotas disponibles", e);
         }
         
         return mascotas;
     }
     
-    public Mascota buscarPorId(Long id) {
-        String sql = "SELECT * FROM mascotas WHERE id = ?";
-        
-        try (Connection conexion = conexionBD.obtenerConexion();
-             PreparedStatement pstmt = conexion.prepareStatement(sql)) {
-            
-            pstmt.setLong(1, id);
-            ResultSet rs = pstmt.executeQuery();
-            
-            if (rs.next()) {
-                return crearMascotaDesdeResultSet(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return null;
+    @Override
+    protected String getNombreTabla() {
+        return "mascotas";
     }
     
-    public Mascota guardar(Mascota mascota) {
-        String sql = "INSERT INTO mascotas (nombre, tipo, peso) VALUES (?, ?, ?)";
-        
-        try (Connection conexion = conexionBD.obtenerConexion();
-             PreparedStatement pstmt = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            
-            pstmt.setString(1, mascota.getNombre());
-            pstmt.setString(2, mascota.getTipo());
-            pstmt.setDouble(3, mascota.getPeso());
-            
-            pstmt.executeUpdate();
-            
-            ResultSet generatedKeys = pstmt.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                mascota.setId(generatedKeys.getLong(1));
-            }
-            
-            return mascota;
-            
-        } catch (SQLException e) {
-            throw new RuntimeException("Error al guardar mascota", e);
-        }
+    @Override
+    protected String getColumnaId() {
+        return "id";
     }
     
-    // Ya no necesitamos eliminar mascotas, solo se marcan como adoptadas
-    
-    private Mascota crearMascotaDesdeResultSet(ResultSet rs) throws SQLException {
+    @Override
+    protected Mascota mapearDesdeResultSet(ResultSet rs) throws SQLException {
         String tipo = rs.getString("tipo");
         String nombre = rs.getString("nombre");
         double peso = rs.getDouble("peso");
@@ -105,5 +72,50 @@ public class MascotaDAO {
         
         mascota.setId(rs.getLong("id"));
         return mascota;
+    }
+    
+    @Override
+    protected void prepararInsercion(PreparedStatement pstmt, Mascota mascota) throws SQLException {
+        pstmt.setString(1, mascota.getNombre());
+        pstmt.setString(2, mascota.getTipo());
+        pstmt.setDouble(3, mascota.getPeso());
+    }
+    
+    @Override
+    protected void prepararActualizacion(PreparedStatement pstmt, Mascota mascota) throws SQLException {
+        pstmt.setString(1, mascota.getNombre());
+        pstmt.setString(2, mascota.getTipo());
+        pstmt.setDouble(3, mascota.getPeso());
+        pstmt.setLong(4, mascota.getId());
+    }
+    
+    @Override
+    protected Long obtenerId(Mascota mascota) {
+        return mascota.getId();
+    }
+    
+    @Override
+    protected void establecerId(Mascota mascota, Long id) {
+        mascota.setId(id);
+    }
+    
+    @Override
+    protected String getSqlCrearTabla() {
+        return "CREATE TABLE IF NOT EXISTS mascotas (" +
+               "    id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+               "    nombre VARCHAR(100) NOT NULL," +
+               "    tipo VARCHAR(50) NOT NULL," +
+               "    peso DECIMAL(10, 2) NOT NULL" +
+               ")";
+    }
+    
+    @Override
+    protected String construirSqlInsercion() {
+        return "INSERT INTO mascotas (nombre, tipo, peso) VALUES (?, ?, ?)";
+    }
+    
+    @Override
+    protected String construirSqlActualizacion() {
+        return "UPDATE mascotas SET nombre = ?, tipo = ?, peso = ? WHERE id = ?";
     }
 }

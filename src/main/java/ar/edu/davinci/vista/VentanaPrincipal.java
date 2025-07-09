@@ -36,6 +36,7 @@ public class VentanaPrincipal extends JFrame {
         tabbedPane.addTab("Mascotas", crearPanelMascotas());
         tabbedPane.addTab("Registrar Mascota", crearPanelRegistroMascota());
         tabbedPane.addTab("Procesar Adopción", crearPanelAdopcion());
+        tabbedPane.addTab("Gestionar Adopciones", crearPanelGestionAdopciones());
         
         add(tabbedPane);
         setLocationRelativeTo(null);
@@ -98,7 +99,7 @@ public class VentanaPrincipal extends JFrame {
         panel.add(new JLabel("Tipo:"), gbc);
         
         gbc.gridx = 1;
-        JComboBox<String> cmbTipo = new JComboBox<>(new String[]{"Perro", "Gato", "Conejo", "Pajaro"});
+        JComboBox<String> cmbTipo = new JComboBox<>(ar.edu.davinci.factory.MascotaFactory.getTiposDisponibles());
         panel.add(cmbTipo, gbc);
         
         // Peso
@@ -286,5 +287,45 @@ public class VentanaPrincipal extends JFrame {
         public String toString() {
             return mascota.getNombre() + " - " + mascota.getTipo();
         }
+    }
+    
+    private JPanel crearPanelGestionAdopciones() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Panel con información
+        JPanel panelInfo = new JPanel();
+        panelInfo.setLayout(new BoxLayout(panelInfo, BoxLayout.Y_AXIS));
+        panelInfo.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        JLabel lblTitulo = new JLabel("Gestión de Adopciones");
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 16));
+        lblTitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelInfo.add(lblTitulo);
+        
+        panelInfo.add(Box.createVerticalStrut(20));
+        
+        JTextArea txtInfo = new JTextArea(
+            "Desde aquí puede:\n\n" +
+            "• Visualizar todas las adopciones realizadas\n" +
+            "• Ver los detalles completos de cada adopción\n" +
+            "• Modificar datos de adoptantes\n" +
+            "• Eliminar adopciones registradas\n" +
+            "• Generar tickets de adopción"
+        );
+        txtInfo.setEditable(false);
+        txtInfo.setBackground(panel.getBackground());
+        txtInfo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelInfo.add(txtInfo);
+        
+        panelInfo.add(Box.createVerticalStrut(30));
+        
+        JButton btnAbrir = new JButton("Abrir Gestión de Adopciones");
+        btnAbrir.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnAbrir.addActionListener(e -> new VentanaGestionAdopciones().setVisible(true));
+        panelInfo.add(btnAbrir);
+        
+        panel.add(panelInfo, BorderLayout.CENTER);
+        
+        return panel;
     }
 }

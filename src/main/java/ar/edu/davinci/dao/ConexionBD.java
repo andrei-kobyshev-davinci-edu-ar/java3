@@ -30,7 +30,8 @@ public class ConexionBD {
         try (Connection conexion = obtenerConexion();
              Statement stmt = conexion.createStatement()) {
             
-            // Crear tabla Empleados
+            // Crear tablas directamente aquí para evitar dependencia circular
+            // Tabla empleados
             stmt.execute(
                 "CREATE TABLE IF NOT EXISTS empleados (" +
                 "    id BIGINT AUTO_INCREMENT PRIMARY KEY," +
@@ -40,7 +41,7 @@ public class ConexionBD {
                 ")"
             );
             
-            // Crear tabla Mascotas
+            // Tabla mascotas
             stmt.execute(
                 "CREATE TABLE IF NOT EXISTS mascotas (" +
                 "    id BIGINT AUTO_INCREMENT PRIMARY KEY," +
@@ -50,7 +51,7 @@ public class ConexionBD {
                 ")"
             );
             
-            // Crear tabla Adoptantes
+            // Tabla adoptantes
             stmt.execute(
                 "CREATE TABLE IF NOT EXISTS adoptantes (" +
                 "    id BIGINT AUTO_INCREMENT PRIMARY KEY," +
@@ -62,7 +63,7 @@ public class ConexionBD {
                 ")"
             );
             
-            // Crear tabla Adopciones
+            // Tabla adopciones
             stmt.execute(
                 "CREATE TABLE IF NOT EXISTS adopciones (" +
                 "    id BIGINT AUTO_INCREMENT PRIMARY KEY," +
@@ -76,6 +77,18 @@ public class ConexionBD {
                 ")"
             );
             
+            // Insertar datos de prueba
+            insertarDatosPrueba();
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Error al inicializar la base de datos", e);
+        }
+    }
+    
+    private void insertarDatosPrueba() {
+        try (Connection conexion = obtenerConexion();
+             Statement stmt = conexion.createStatement()) {
+            
             // Insertar empleado de prueba si no existe
             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM empleados");
             rs.next();
@@ -83,8 +96,7 @@ public class ConexionBD {
                 stmt.execute(
                     "INSERT INTO empleados (nombre, email, contrasena) VALUES " +
                     "('Admin', 'admin@veterinaria.com', '" + 
-                    // Contraseña: admin123
-                    "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9" + 
+                    "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9" + // admin123
                     "')"
                 );
             }
@@ -105,7 +117,7 @@ public class ConexionBD {
             }
             
         } catch (SQLException e) {
-            throw new RuntimeException("Error al inicializar la base de datos", e);
+            throw new RuntimeException("Error al insertar datos de prueba", e);
         }
     }
 }

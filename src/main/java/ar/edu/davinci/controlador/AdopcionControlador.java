@@ -1,45 +1,27 @@
 package ar.edu.davinci.controlador;
 
-import ar.edu.davinci.dao.*;
+import ar.edu.davinci.excepciones.*;
 import ar.edu.davinci.modelo.*;
-import ar.edu.davinci.servicio.SesionServicio;
+import ar.edu.davinci.servicio.AdopcionServicio;
 import java.util.List;
 
 /**
  * Controlador para manejar adopciones.
+ * Delega la lógica de negocio al servicio.
  */
 public class AdopcionControlador {
-    private final MascotaDAO mascotaDAO = new MascotaDAO();
-    private final AdoptanteDAO adoptanteDAO = new AdoptanteDAO();
-    private final AdopcionDAO adopcionDAO = new AdopcionDAO();
-    private final SesionServicio sesionServicio = SesionServicio.obtenerInstancia();
+    private final AdopcionServicio adopcionServicio = new AdopcionServicio();
     
     public List<Mascota> obtenerMascotasDisponibles() {
-        return mascotaDAO.buscarTodas();
+        return adopcionServicio.obtenerMascotasDisponibles();
     }
     
     public String registrarMascota(String nombre, String tipo, double peso) {
         try {
-            Mascota mascota;
-            switch (tipo.toLowerCase()) {
-                case "perro":
-                    mascota = new Perro(nombre, peso);
-                    break;
-                case "gato":
-                    mascota = new Gato(nombre, peso);
-                    break;
-                case "conejo":
-                    mascota = new Conejo(nombre, peso);
-                    break;
-                case "pajaro":
-                case "pájaro":
-                    mascota = new Pajaro(nombre, peso);
-                    break;
-                default:
-                    return "Tipo de mascota no válido. Use: Perro, Gato, Conejo o Pájaro";
-            }
-            mascotaDAO.guardar(mascota);
+            adopcionServicio.registrarMascota(nombre, tipo, peso);
             return "Mascota registrada exitosamente";
+        } catch (TipoMascotaInvalidoException | NombreInvalidoException e) {
+            return e.getMessage();
         } catch (Exception e) {
             return "Error al registrar mascota: " + e.getMessage();
         }
@@ -50,30 +32,59 @@ public class AdopcionControlador {
             String telefonoAdoptante) {
         
         try {
-            if (!sesionServicio.haySesionActiva()) {
-                return new ResultadoAdopcion(false, "No hay sesión activa");
-            }
-            
-            Mascota mascota = mascotaDAO.buscarPorId(mascotaId);
-            if (mascota == null) {
-                return new ResultadoAdopcion(false, "Mascota no encontrada");
-            }
-            
-            Adoptante adoptante = new Adoptante(nombreAdoptante, edadAdoptante, direccionAdoptante);
-            adoptante.setEmail(emailAdoptante);
-            adoptante.setTelefono(telefonoAdoptante);
-            adoptante = adoptanteDAO.guardar(adoptante);
-            
-            Empleado empleado = sesionServicio.getEmpleadoActual();
-            Adopcion adopcion = new Adopcion(adoptante, mascota, empleado);
-            adopcionDAO.guardar(adopcion);
-            
-            // La mascota ya no estará disponible porque está en una adopción
-            
+            Adopcion adopcion = adopcionServicio.procesarAdopcion(
+                mascotaId, nombreAdoptante, edadAdoptante, 
+                direccionAdoptante, emailAdoptante, telefonoAdoptante
+            );
             return new ResultadoAdopcion(true, "Adopción exitosa", adopcion);
-            
+        } catch (AdopcionException e) {
+            return new ResultadoAdopcion(false, e.getMessage());
         } catch (Exception e) {
-            return new ResultadoAdopcion(false, "Error: " + e.getMessage());
+            return new ResultadoAdopcion(false, "Error inesperado: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Obtiene todas las adopciones realizadas.
+     * @return Lista de adopciones
+     */
+    public List<Adopcion> obtenerTodasLasAdopciones() {
+        return adopcionServicio.obtenerTodasLasAdopciones();
+    }
+    
+    /**
+     * Actualiza una adopción existente.
+     * @param adopcion La adopción con los datos actualizados
+     * @return Resultado de la operación
+     */
+    public ResultadoAdopcion actualizarAdopcion(Adopcion adopcion) {
+        try {
+            Adopcion actualizada = adopcionServicio.actualizarAdopcion(adopcion);
+            return new ResultadoAdopcion(true, "Adopción actualizada exitosamente", actualizada);
+        } catch (AdopcionException e) {
+            return new ResultadoAdopcion(false, e.getMessage());
+        } catch (Exception e) {
+            return new ResultadoAdopcion(false, "Error inesperado: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Elimina una adopción.
+     * @param id ID de la adopción a eliminar
+     * @return Resultado de la operación
+     */
+    public ResultadoAdopcion eliminarAdopcion(Long id) {
+        try {
+            boolean eliminado = adopcionServicio.eliminarAdopcion(id);
+            if (eliminado) {
+                return new ResultadoAdopcion(true, "Adopción eliminada exitosamente");
+            } else {
+                return new ResultadoAdopcion(false, "No se pudo eliminar la adopción");
+            }
+        } catch (AdopcionException e) {
+            return new ResultadoAdopcion(false, e.getMessage());
+        } catch (Exception e) {
+            return new ResultadoAdopcion(false, "Error inesperado: " + e.getMessage());
         }
     }
     
